@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.database import TaskDB, utc_now
-from app.models import TaskCreate, TaskUpdate
+from app.models import TaskCreate, TaskStatus, TaskUpdate
 
 
 def create_task(db: Session, task: TaskCreate) -> TaskDB:
@@ -16,8 +16,16 @@ def create_task(db: Session, task: TaskCreate) -> TaskDB:
     return db_task
 
 
-def get_tasks(db: Session) -> list[TaskDB]:
-    return db.query(TaskDB).all()
+def get_tasks(
+    db: Session,
+    status: TaskStatus | None = None,
+    skip: int = 0,
+    limit: int = 100,
+) -> list[TaskDB]:
+    query = db.query(TaskDB)
+    if status is not None:
+        query = query.filter(TaskDB.status == status)
+    return query.offset(skip).limit(limit).all()
 
 
 def get_task(db: Session, task_id: int) -> TaskDB | None:

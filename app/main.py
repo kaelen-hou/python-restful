@@ -1,9 +1,9 @@
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app import crud
 from app.database import create_tables, get_db
-from app.models import TaskCreate, TaskResponse, TaskUpdate
+from app.models import TaskCreate, TaskResponse, TaskStatus, TaskUpdate
 
 app = FastAPI(title="Task API", description="A RESTful API for task management")
 
@@ -16,8 +16,13 @@ def create_task(task: TaskCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/tasks", response_model=list[TaskResponse])
-def list_tasks(db: Session = Depends(get_db)):
-    return crud.get_tasks(db)
+def list_tasks(
+    status: TaskStatus | None = None,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
+    return crud.get_tasks(db, status=status, skip=skip, limit=limit)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)

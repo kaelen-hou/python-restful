@@ -54,6 +54,33 @@ class TestListTasks:
         assert data[0]["title"] == "Task 1"
         assert data[1]["title"] == "Task 2"
 
+    def test_list_tasks_filter_by_status(self, client):
+        client.post("/tasks", json={"title": "Pending", "status": "pending"})
+        client.post("/tasks", json={"title": "Done", "status": "completed"})
+        response = client.get("/tasks?status=completed")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["title"] == "Done"
+
+    def test_list_tasks_pagination(self, client):
+        for i in range(5):
+            client.post("/tasks", json={"title": f"Task {i}"})
+        response = client.get("/tasks?skip=2&limit=2")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert data[0]["title"] == "Task 2"
+        assert data[1]["title"] == "Task 3"
+
+    def test_list_tasks_invalid_pagination(self, client):
+        response = client.get("/tasks?skip=-1")
+        assert response.status_code == 422
+        response = client.get("/tasks?limit=0")
+        assert response.status_code == 422
+        response = client.get("/tasks?limit=101")
+        assert response.status_code == 422
+
 
 class TestGetTask:
     def test_get_task_exists(self, client):
