@@ -69,12 +69,13 @@ def create_task(
 @app.get("/tasks", response_model=list[TaskResponse])
 def list_tasks(
     status: TaskStatus | None = None,
+    search: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=100),
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
 ):
-    return crud.get_tasks(db, status=status, skip=skip, limit=limit)
+    return crud.get_tasks(db, status=status, search=search, skip=skip, limit=limit)
 
 
 @app.get("/tasks/{task_id}", response_model=TaskResponse)

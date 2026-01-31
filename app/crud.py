@@ -19,12 +19,15 @@ def create_task(db: Session, task: TaskCreate) -> TaskDB:
 def get_tasks(
     db: Session,
     status: TaskStatus | None = None,
+    search: str | None = None,
     skip: int = 0,
     limit: int = 100,
 ) -> list[TaskDB]:
     query = db.query(TaskDB)
     if status is not None:
         query = query.filter(TaskDB.status == status)
+    if search is not None:
+        query = query.filter(TaskDB.title.ilike(f"%{search}%"))
     return query.offset(skip).limit(limit).all()
 
 

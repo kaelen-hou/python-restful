@@ -116,6 +116,16 @@ class TestListTasks:
         response = client.get("/tasks?limit=101")
         assert response.status_code == 422
 
+    def test_list_tasks_search(self, client):
+        client.post("/tasks", json={"title": "Buy groceries"})
+        client.post("/tasks", json={"title": "Call mom"})
+        client.post("/tasks", json={"title": "Buy new shoes"})
+        response = client.get("/tasks?search=buy")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 2
+        assert all("Buy" in task["title"] for task in data)
+
 
 class TestGetTask:
     def test_get_task_exists(self, client):
