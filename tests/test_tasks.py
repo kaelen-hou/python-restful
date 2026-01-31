@@ -1,3 +1,29 @@
+class TestAuth:
+    def test_login_success(self, unauthenticated_client):
+        response = unauthenticated_client.post(
+            "/login", json={"username": "admin", "password": "admin"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["token_type"] == "bearer"
+
+    def test_login_invalid_credentials(self, unauthenticated_client):
+        response = unauthenticated_client.post(
+            "/login", json={"username": "admin", "password": "wrong"}
+        )
+        assert response.status_code == 401
+
+    def test_protected_endpoint_without_token(self, unauthenticated_client):
+        response = unauthenticated_client.get("/tasks")
+        assert response.status_code == 403
+
+    def test_protected_endpoint_with_invalid_token(self, unauthenticated_client):
+        unauthenticated_client.headers["Authorization"] = "Bearer invalid-token"
+        response = unauthenticated_client.get("/tasks")
+        assert response.status_code == 401
+
+
 class TestCreateTask:
     def test_create_task_valid(self, client):
         response = client.post("/tasks", json={"title": "Test task"})
