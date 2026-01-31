@@ -1,3 +1,12 @@
+class TestHealth:
+    def test_health_check(self, unauthenticated_client):
+        response = unauthenticated_client.get("/health")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "healthy"
+        assert data["database"] == "connected"
+
+
 class TestAuth:
     def test_login_success(self, unauthenticated_client):
         response = unauthenticated_client.post(

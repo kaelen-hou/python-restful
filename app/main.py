@@ -1,4 +1,7 @@
-from fastapi import Depends, FastAPI, HTTPException, Query, status
+import logging
+
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app import crud
@@ -13,9 +16,32 @@ from app.auth import (
 from app.database import create_tables, get_db
 from app.models import TaskCreate, TaskResponse, TaskStatus, TaskUpdate
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)
+
 app = FastAPI(title="Task API", description="A RESTful API for task management")
 
 create_tables()
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"{request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"{request.method} {request.url.path} - {response.status_code}")
+    return response
+
+
+@app.get("/health")
+def health_check(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("SELECT 1"))
+        return {"status": "healthy", "database": "connected"}
+    except Exception:
+        raise HTTPException(status_code=503, detail="Database unavailable") from None
 
 
 @app.post("/login", response_model=Token)
