@@ -3,7 +3,7 @@ import sys
 import uuid
 from contextvars import ContextVar
 
-from pythonjsonlogger.json import JsonFormatter
+from pythonjsonlogger import jsonlogger
 
 request_id_var: ContextVar[str] = ContextVar("request_id", default="")
 
@@ -19,9 +19,8 @@ def setup_logging(debug: bool = False) -> logging.Logger:
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     handler = logging.StreamHandler(sys.stdout)
-    formatter = JsonFormatter(
-        "%(asctime)s %(levelname)s %(name)s %(message)s %(request_id)s",
-        rename_fields={"asctime": "timestamp", "levelname": "level"},
+    formatter = jsonlogger.JsonFormatter(
+        "%(asctime)s %(levelname)s %(name)s %(message)s %(request_id)s"
     )
     handler.setFormatter(formatter)
     handler.addFilter(RequestIdFilter())
