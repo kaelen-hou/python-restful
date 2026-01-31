@@ -18,17 +18,18 @@ python -m pytest tests/test_tasks.py::TestCreateTask::test_create_task_valid -v
 
 ## Architecture
 
-FastAPI REST API for task management with SQLite storage.
+FastAPI REST API for task management with SQLite storage and JWT auth.
 
 ```
 app/
 ├── main.py      # FastAPI routes, app entry point
 ├── models.py    # Pydantic schemas (TaskCreate, TaskUpdate, TaskResponse, TaskStatus enum)
 ├── database.py  # SQLAlchemy engine, session, TaskDB model
-└── crud.py      # Database operations (create/get/update/delete)
+├── crud.py      # Database operations (create/get/update/delete)
+└── auth.py      # JWT auth (login, token validation, password hashing)
 ```
 
-**Request flow:** Route (main.py) → CRUD function (crud.py) → SQLAlchemy model (database.py) → Response via Pydantic schema (models.py)
+**Request flow:** Route (main.py) → Auth check (auth.py) → CRUD function (crud.py) → SQLAlchemy model (database.py) → Response via Pydantic schema (models.py)
 
 ## Conventions
 

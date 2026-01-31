@@ -22,15 +22,39 @@ API documentation available at http://localhost:8000/docs
 pytest tests/ -v
 ```
 
+## Authentication
+
+All `/tasks` endpoints require JWT authentication.
+
+```bash
+# Get token (demo user: admin/admin)
+curl -X POST http://localhost:8000/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "admin", "password": "admin"}'
+
+# Use token
+curl http://localhost:8000/tasks \
+  -H "Authorization: Bearer <token>"
+```
+
 ## API Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | /tasks | Create a task |
-| GET | /tasks | List all tasks |
-| GET | /tasks/{id} | Get a task |
-| PUT | /tasks/{id} | Update a task |
-| DELETE | /tasks/{id} | Delete a task |
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| POST | /login | Get JWT token | No |
+| POST | /tasks | Create a task | Yes |
+| GET | /tasks | List tasks | Yes |
+| GET | /tasks/{id} | Get a task | Yes |
+| PUT | /tasks/{id} | Update a task | Yes |
+| DELETE | /tasks/{id} | Delete a task | Yes |
+
+### Query Parameters (GET /tasks)
+
+| Param | Type | Description |
+|-------|------|-------------|
+| status | string | Filter by status: pending, in_progress, completed |
+| skip | int | Offset for pagination (default: 0) |
+| limit | int | Max results 1-100 (default: 100) |
 
 ## Task Schema
 
