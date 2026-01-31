@@ -10,7 +10,7 @@ class TestHealth:
 class TestAuth:
     def test_login_success(self, unauthenticated_client):
         response = unauthenticated_client.post(
-            "/login", json={"username": "admin", "password": "admin"}
+            "/api/v1/login", json={"username": "admin", "password": "admin"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -19,23 +19,23 @@ class TestAuth:
 
     def test_login_invalid_credentials(self, unauthenticated_client):
         response = unauthenticated_client.post(
-            "/login", json={"username": "admin", "password": "wrong"}
+            "/api/v1/login", json={"username": "admin", "password": "wrong"}
         )
         assert response.status_code == 401
 
     def test_protected_endpoint_without_token(self, unauthenticated_client):
-        response = unauthenticated_client.get("/tasks")
+        response = unauthenticated_client.get("/api/v1/tasks")
         assert response.status_code == 403
 
     def test_protected_endpoint_with_invalid_token(self, unauthenticated_client):
         unauthenticated_client.headers["Authorization"] = "Bearer invalid-token"
-        response = unauthenticated_client.get("/tasks")
+        response = unauthenticated_client.get("/api/v1/tasks")
         assert response.status_code == 401
 
 
 class TestCreateTask:
     def test_create_task_valid(self, client):
-        response = client.post("/tasks", json={"title": "Test task"})
+        response = client.post("/api/v1/tasks", json={"title": "Test task"})
         assert response.status_code == 201
         data = response.json()
         assert data["title"] == "Test task"
@@ -46,7 +46,7 @@ class TestCreateTask:
         assert "updated_at" in data
 
     def test_create_task_with_all_fields(self, client):
-        response = client.post("/tasks", json={
+        response = client.post("/api/v1/tasks", json={
             "title": "Full task",
             "description": "A detailed description",
             "status": "in_progress"
@@ -58,15 +58,15 @@ class TestCreateTask:
         assert data["status"] == "in_progress"
 
     def test_create_task_missing_title(self, client):
-        response = client.post("/tasks", json={"description": "No title"})
+        response = client.post("/api/v1/tasks", json={"description": "No title"})
         assert response.status_code == 422
 
     def test_create_task_title_too_long(self, client):
-        response = client.post("/tasks", json={"title": "x" * 201})
+        response = client.post("/api/v1/tasks", json={"title": "x" * 201})
         assert response.status_code == 422
 
     def test_create_task_invalid_status(self, client):
-        response = client.post("/tasks", json={
+        response = client.post("/api/v1/tasks", json={
             "title": "Test",
             "status": "invalid_status"
         })
@@ -75,14 +75,14 @@ class TestCreateTask:
 
 class TestListTasks:
     def test_list_tasks_empty(self, client):
-        response = client.get("/tasks")
+        response = client.get("/api/v1/tasks")
         assert response.status_code == 200
         assert response.json() == []
 
     def test_list_tasks_populated(self, client):
-        client.post("/tasks", json={"title": "Task 1"})
-        client.post("/tasks", json={"title": "Task 2"})
-        response = client.get("/tasks")
+        client.post("/api/v1/tasks", json={"title": "Task 1"})
+        client.post("/api/v1/tasks", json={"title": "Task 2"})
+        response = client.get("/api/v1/tasks")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -90,9 +90,9 @@ class TestListTasks:
         assert data[1]["title"] == "Task 2"
 
     def test_list_tasks_filter_by_status(self, client):
-        client.post("/tasks", json={"title": "Pending", "status": "pending"})
-        client.post("/tasks", json={"title": "Done", "status": "completed"})
-        response = client.get("/tasks?status=completed")
+        client.post("/api/v1/tasks", json={"title": "Pending", "status": "pending"})
+        client.post("/api/v1/tasks", json={"title": "Done", "status": "completed"})
+        response = client.get("/api/v1/tasks?status=completed")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 1
@@ -100,8 +100,8 @@ class TestListTasks:
 
     def test_list_tasks_pagination(self, client):
         for i in range(5):
-            client.post("/tasks", json={"title": f"Task {i}"})
-        response = client.get("/tasks?skip=2&limit=2")
+            client.post("/api/v1/tasks", json={"title": f"Task {i}"})
+        response = client.get("/api/v1/tasks?skip=2&limit=2")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -109,18 +109,18 @@ class TestListTasks:
         assert data[1]["title"] == "Task 3"
 
     def test_list_tasks_invalid_pagination(self, client):
-        response = client.get("/tasks?skip=-1")
+        response = client.get("/api/v1/tasks?skip=-1")
         assert response.status_code == 422
-        response = client.get("/tasks?limit=0")
+        response = client.get("/api/v1/tasks?limit=0")
         assert response.status_code == 422
-        response = client.get("/tasks?limit=101")
+        response = client.get("/api/v1/tasks?limit=101")
         assert response.status_code == 422
 
     def test_list_tasks_search(self, client):
-        client.post("/tasks", json={"title": "Buy groceries"})
-        client.post("/tasks", json={"title": "Call mom"})
-        client.post("/tasks", json={"title": "Buy new shoes"})
-        response = client.get("/tasks?search=buy")
+        client.post("/api/v1/tasks", json={"title": "Buy groceries"})
+        client.post("/api/v1/tasks", json={"title": "Call mom"})
+        client.post("/api/v1/tasks", json={"title": "Buy new shoes"})
+        response = client.get("/api/v1/tasks?search=buy")
         assert response.status_code == 200
         data = response.json()
         assert len(data) == 2
@@ -129,56 +129,56 @@ class TestListTasks:
 
 class TestGetTask:
     def test_get_task_exists(self, client):
-        create_response = client.post("/tasks", json={"title": "Test task"})
+        create_response = client.post("/api/v1/tasks", json={"title": "Test task"})
         task_id = create_response.json()["id"]
-        response = client.get(f"/tasks/{task_id}")
+        response = client.get(f"/api/v1/tasks/{task_id}")
         assert response.status_code == 200
         assert response.json()["title"] == "Test task"
 
     def test_get_task_not_found(self, client):
-        response = client.get("/tasks/999")
+        response = client.get("/api/v1/tasks/999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
 
 class TestUpdateTask:
     def test_update_task_partial(self, client):
-        create_response = client.post("/tasks", json={"title": "Original"})
+        create_response = client.post("/api/v1/tasks", json={"title": "Original"})
         task_id = create_response.json()["id"]
-        response = client.put(f"/tasks/{task_id}", json={"title": "Updated"})
+        response = client.put(f"/api/v1/tasks/{task_id}", json={"title": "Updated"})
         assert response.status_code == 200
         assert response.json()["title"] == "Updated"
 
     def test_update_task_status(self, client):
-        create_response = client.post("/tasks", json={"title": "Test"})
+        create_response = client.post("/api/v1/tasks", json={"title": "Test"})
         task_id = create_response.json()["id"]
-        response = client.put(f"/tasks/{task_id}", json={"status": "completed"})
+        response = client.put(f"/api/v1/tasks/{task_id}", json={"status": "completed"})
         assert response.status_code == 200
         assert response.json()["status"] == "completed"
 
     def test_update_task_not_found(self, client):
-        response = client.put("/tasks/999", json={"title": "Updated"})
+        response = client.put("/api/v1/tasks/999", json={"title": "Updated"})
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"
 
     def test_update_task_invalid_status(self, client):
-        create_response = client.post("/tasks", json={"title": "Test"})
+        create_response = client.post("/api/v1/tasks", json={"title": "Test"})
         task_id = create_response.json()["id"]
-        response = client.put(f"/tasks/{task_id}", json={"status": "bad"})
+        response = client.put(f"/api/v1/tasks/{task_id}", json={"status": "bad"})
         assert response.status_code == 422
 
 
 class TestDeleteTask:
     def test_delete_task_exists(self, client):
-        create_response = client.post("/tasks", json={"title": "To delete"})
+        create_response = client.post("/api/v1/tasks", json={"title": "To delete"})
         task_id = create_response.json()["id"]
-        response = client.delete(f"/tasks/{task_id}")
+        response = client.delete(f"/api/v1/tasks/{task_id}")
         assert response.status_code == 204
         # Verify it's gone
-        get_response = client.get(f"/tasks/{task_id}")
+        get_response = client.get(f"/api/v1/tasks/{task_id}")
         assert get_response.status_code == 404
 
     def test_delete_task_not_found(self, client):
-        response = client.delete("/tasks/999")
+        response = client.delete("/api/v1/tasks/999")
         assert response.status_code == 404
         assert response.json()["detail"] == "Task not found"

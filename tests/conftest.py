@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
-from app.main import app, limiter
+from app.main import app
+from app.rate_limit import limiter
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
@@ -40,7 +41,9 @@ def client(db_session):
     limiter.reset()  # Reset rate limiter for each test
     test_client = TestClient(app)
     # Get auth token
-    response = test_client.post("/login", json={"username": "admin", "password": "admin"})
+    response = test_client.post(
+        "/api/v1/login", json={"username": "admin", "password": "admin"}
+    )
     token = response.json()["access_token"]
     test_client.headers["Authorization"] = f"Bearer {token}"
     yield test_client
