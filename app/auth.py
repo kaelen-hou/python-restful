@@ -1,5 +1,5 @@
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -14,9 +14,7 @@ security = HTTPBearer()
 
 
 def hash_password(password: str) -> str:
-    return hashlib.pbkdf2_hmac(
-        "sha256", password.encode(), b"static-salt-for-demo", 100000
-    ).hex()
+    return hashlib.pbkdf2_hmac("sha256", password.encode(), b"static-salt-for-demo", 100000).hex()
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -24,7 +22,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 # Demo user (in production, use database with proper salting)
-DEMO_USER = {
+DEMO_USER: dict[str, str] = {
     "username": "admin",
     "hashed_password": hash_password("admin"),
 }
@@ -45,26 +43,26 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
-def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(UTC) + (
+def create_access_token(data: dict[str, str], expires_delta: timedelta | None = None) -> str:
+    to_encode: dict[str, str | datetime] = dict(data)
+    expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.access_token_expire_minutes)
     )
     to_encode.update({"exp": expire, "type": "access"})
-    return jwt.encode(to_encode, settings.secret_key, algorithm="HS256")
+    return str(jwt.encode(to_encode, settings.secret_key, algorithm="HS256"))
 
 
-def create_refresh_token(data: dict) -> str:
-    to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(days=settings.refresh_token_expire_days)
+def create_refresh_token(data: dict[str, str]) -> str:
+    to_encode: dict[str, str | datetime] = dict(data)
+    expire = datetime.now(timezone.utc) + timedelta(days=settings.refresh_token_expire_days)
     to_encode.update({"exp": expire, "type": "refresh"})
-    return jwt.encode(to_encode, settings.secret_key, algorithm="HS256")
+    return str(jwt.encode(to_encode, settings.secret_key, algorithm="HS256"))
 
 
 def verify_refresh_token(token: str) -> str:
     """Verify refresh token and return username."""
     try:
-        payload = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+        payload: dict[str, str] = jwt.decode(token, settings.secret_key, algorithms=["HS256"])
         if payload.get("type") != "refresh":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,7 +89,7 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(
+        payload: dict[str, str] = jwt.decode(
             credentials.credentials, settings.secret_key, algorithms=["HS256"]
         )
         if payload.get("type") != "access":

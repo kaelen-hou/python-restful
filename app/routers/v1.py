@@ -16,7 +16,7 @@ from app.auth import (
     verify_refresh_token,
 )
 from app.config import get_settings
-from app.database import get_db
+from app.database import TaskDB, get_db
 from app.models import TaskCreate, TaskResponse, TaskStatus, TaskUpdate
 from app.rate_limit import limiter
 
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api/v1", tags=["v1"])
 
 @router.post("/login", response_model=Token, summary="Authenticate user")
 @limiter.limit("10/minute")
-def login(request: Request, login_request: LoginRequest):
+def login(request: Request, login_request: LoginRequest) -> dict[str, str]:
     """
     Authenticate with username and password to receive JWT tokens.
 
@@ -55,7 +55,7 @@ def login(request: Request, login_request: LoginRequest):
 
 @router.post("/refresh", response_model=Token, summary="Refresh access token")
 @limiter.limit("30/minute")
-def refresh(request: Request, refresh_request: RefreshRequest):
+def refresh(request: Request, refresh_request: RefreshRequest) -> dict[str, str]:
     """
     Get a new access token using a valid refresh token.
 
@@ -84,7 +84,7 @@ def create_task(
     task: TaskCreate,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
-):
+) -> TaskDB:
     """
     Create a new task with the following fields:
 
@@ -105,7 +105,7 @@ def list_tasks(
     limit: int = Query(100, ge=1, le=100, description="Max records to return"),
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
-):
+) -> list[TaskDB]:
     """
     Retrieve a list of tasks with optional filtering and pagination.
     """
@@ -119,7 +119,7 @@ def get_task(
     task_id: int,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
-):
+) -> TaskDB:
     """
     Retrieve a single task by its ID.
     """
@@ -137,7 +137,7 @@ def update_task(
     task: TaskUpdate,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
-):
+) -> TaskDB:
     """
     Update an existing task. All fields are optional.
     """
@@ -158,7 +158,7 @@ def delete_task(
     task_id: int,
     db: Session = Depends(get_db),
     _: str = Depends(get_current_user),
-):
+) -> None:
     """
     Permanently delete a task by its ID.
     """

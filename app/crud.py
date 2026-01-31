@@ -1,3 +1,5 @@
+from typing import Any
+
 from sqlalchemy.orm import Session
 
 from app.database import TaskDB, utc_now
@@ -22,7 +24,7 @@ def get_tasks(
     search: str | None = None,
     skip: int = 0,
     limit: int = 100,
-) -> list[TaskDB]:
+) -> list[Any]:
     query = db.query(TaskDB)
     if status is not None:
         query = query.filter(TaskDB.status == status)
@@ -32,7 +34,8 @@ def get_tasks(
 
 
 def get_task(db: Session, task_id: int) -> TaskDB | None:
-    return db.query(TaskDB).filter(TaskDB.id == task_id).first()
+    result: TaskDB | None = db.query(TaskDB).filter(TaskDB.id == task_id).first()
+    return result
 
 
 def update_task(db: Session, task_id: int, task: TaskUpdate) -> TaskDB | None:
@@ -44,7 +47,7 @@ def update_task(db: Session, task_id: int, task: TaskUpdate) -> TaskDB | None:
     for field, value in update_data.items():
         setattr(db_task, field, value)
 
-    db_task.updated_at = utc_now()
+    db_task.updated_at = utc_now()  # type: ignore[assignment]
     db.commit()
     db.refresh(db_task)
     return db_task

@@ -9,12 +9,12 @@ request_id_var: ContextVar[str] = ContextVar("request_id", default="")
 
 
 class RequestIdFilter(logging.Filter):
-    def filter(self, record):
+    def filter(self, record: logging.LogRecord) -> bool:
         record.request_id = request_id_var.get()
         return True
 
 
-def setup_logging(debug: bool = False):
+def setup_logging(debug: bool = False) -> logging.Logger:
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 

@@ -1,4 +1,4 @@
-.PHONY: install dev lint format test test-cov run clean
+.PHONY: install dev lint format test test-cov typecheck security check run clean
 
 install:
 	pip install -r requirements.txt
@@ -20,10 +20,19 @@ test:
 test-cov:
 	pytest tests/ --cov=app --cov-report=html
 
+typecheck:
+	mypy app
+
+security:
+	bandit -r app -c pyproject.toml
+
+check: lint typecheck security test
+	@echo "All checks passed!"
+
 run:
 	uvicorn app.main:app --reload
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
-	rm -rf .pytest_cache .ruff_cache htmlcov .coverage
+	rm -rf .pytest_cache .ruff_cache .mypy_cache htmlcov .coverage
