@@ -15,6 +15,7 @@ class TestAuth:
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
+        assert "refresh_token" in data
         assert data["token_type"] == "bearer"
 
     def test_login_invalid_credentials(self, unauthenticated_client):
@@ -30,6 +31,41 @@ class TestAuth:
     def test_protected_endpoint_with_invalid_token(self, unauthenticated_client):
         unauthenticated_client.headers["Authorization"] = "Bearer invalid-token"
         response = unauthenticated_client.get("/api/v1/tasks")
+        assert response.status_code == 401
+
+    def test_refresh_token(self, unauthenticated_client):
+        # Login to get tokens
+        login_response = unauthenticated_client.post(
+            "/api/v1/login", json={"username": "admin", "password": "admin"}
+        )
+        refresh_token = login_response.json()["refresh_token"]
+
+        # Use refresh token to get new access token
+        response = unauthenticated_client.post(
+            "/api/v1/refresh", json={"refresh_token": refresh_token}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "access_token" in data
+        assert data["refresh_token"] == refresh_token
+
+    def test_refresh_token_invalid(self, unauthenticated_client):
+        response = unauthenticated_client.post(
+            "/api/v1/refresh", json={"refresh_token": "invalid-token"}
+        )
+        assert response.status_code == 401
+
+    def test_access_token_cannot_refresh(self, unauthenticated_client):
+        # Login to get access token
+        login_response = unauthenticated_client.post(
+            "/api/v1/login", json={"username": "admin", "password": "admin"}
+        )
+        access_token = login_response.json()["access_token"]
+
+        # Try to use access token as refresh token (should fail)
+        response = unauthenticated_client.post(
+            "/api/v1/refresh", json={"refresh_token": access_token}
+        )
         assert response.status_code == 401
 
 

@@ -7,10 +7,13 @@ from app import crud
 from app.auth import (
     DEMO_USER,
     LoginRequest,
+    RefreshRequest,
     Token,
     create_access_token,
+    create_refresh_token,
     get_current_user,
     verify_password,
+    verify_refresh_token,
 )
 from app.config import get_settings
 from app.database import get_db
@@ -27,12 +30,12 @@ router = APIRouter(prefix="/api/v1", tags=["v1"])
 @limiter.limit("10/minute")
 def login(request: Request, login_request: LoginRequest):
     """
-    Authenticate with username and password to receive a JWT token.
+    Authenticate with username and password to receive JWT tokens.
 
     - **username**: User's username
     - **password**: User's password
 
-    Returns a bearer token valid for 30 minutes.
+    Returns access token (30 min) and refresh token (7 days).
     """
     if login_request.username != DEMO_USER["username"] or not verify_password(
         login_request.password, DEMO_USER["hashed_password"]
@@ -42,7 +45,31 @@ def login(request: Request, login_request: LoginRequest):
             detail="Incorrect username or password",
         )
     access_token = create_access_token(data={"sub": login_request.username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": login_request.username})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+@router.post("/refresh", response_model=Token, summary="Refresh access token")
+@limiter.limit("30/minute")
+def refresh(request: Request, refresh_request: RefreshRequest):
+    """
+    Get a new access token using a valid refresh token.
+
+    - **refresh_token**: Valid refresh token from login
+
+    Returns new access token and the same refresh token.
+    """
+    username = verify_refresh_token(refresh_request.refresh_token)
+    access_token = create_access_token(data={"sub": username})
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_request.refresh_token,
+        "token_type": "bearer",
+    }
 
 
 @router.post(
