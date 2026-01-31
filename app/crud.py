@@ -1,9 +1,6 @@
-from datetime import datetime
-from typing import Optional
-
 from sqlalchemy.orm import Session
 
-from app.database import TaskDB
+from app.database import TaskDB, utc_now
 from app.models import TaskCreate, TaskUpdate
 
 
@@ -23,11 +20,11 @@ def get_tasks(db: Session) -> list[TaskDB]:
     return db.query(TaskDB).all()
 
 
-def get_task(db: Session, task_id: int) -> Optional[TaskDB]:
+def get_task(db: Session, task_id: int) -> TaskDB | None:
     return db.query(TaskDB).filter(TaskDB.id == task_id).first()
 
 
-def update_task(db: Session, task_id: int, task: TaskUpdate) -> Optional[TaskDB]:
+def update_task(db: Session, task_id: int, task: TaskUpdate) -> TaskDB | None:
     db_task = get_task(db, task_id)
     if db_task is None:
         return None
@@ -36,7 +33,7 @@ def update_task(db: Session, task_id: int, task: TaskUpdate) -> Optional[TaskDB]
     for field, value in update_data.items():
         setattr(db_task, field, value)
 
-    db_task.updated_at = datetime.utcnow()
+    db_task.updated_at = utc_now()
     db.commit()
     db.refresh(db_task)
     return db_task

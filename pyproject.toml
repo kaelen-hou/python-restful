@@ -1,0 +1,21 @@
+[project]
+name = "task-api"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]  # Allow Depends() in function defaults (FastAPI pattern)
+# E: pycodestyle errors
+# F: pyflakes
+# I: isort (import sorting)
+# B: bugbear (common bugs)
+# UP: pyupgrade (modern syntax)
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"

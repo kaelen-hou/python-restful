@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Enum, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
@@ -15,6 +15,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 
+def utc_now():
+    return datetime.now(UTC)
+
+
 class TaskDB(Base):
     __tablename__ = "tasks"
 
@@ -22,8 +26,8 @@ class TaskDB(Base):
     title = Column(String(200), nullable=False)
     description = Column(String, nullable=True)
     status = Column(Enum(TaskStatus), default=TaskStatus.pending, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
 
 def create_tables():
