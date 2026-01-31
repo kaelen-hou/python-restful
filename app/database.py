@@ -3,12 +3,13 @@ from datetime import UTC, datetime
 from sqlalchemy import Column, DateTime, Enum, Integer, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from app.config import get_settings
 from app.models import TaskStatus
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./tasks.db"
+settings = get_settings()
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    settings.database_url, connect_args={"check_same_thread": False}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

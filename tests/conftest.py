@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.database import Base, get_db
-from app.main import app
+from app.main import app, limiter
 
 SQLALCHEMY_DATABASE_URL = "sqlite://"
 
@@ -37,6 +37,7 @@ def client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
+    limiter.reset()  # Reset rate limiter for each test
     test_client = TestClient(app)
     # Get auth token
     response = test_client.post("/login", json={"username": "admin", "password": "admin"})
@@ -55,5 +56,6 @@ def unauthenticated_client(db_session):
             pass
 
     app.dependency_overrides[get_db] = override_get_db
+    limiter.reset()  # Reset rate limiter for each test
     yield TestClient(app)
     app.dependency_overrides.clear()
